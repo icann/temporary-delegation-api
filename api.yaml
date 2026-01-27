@@ -1,0 +1,220 @@
+openapi: 3.1.0
+
+info:
+  title: Temporary Delegation API (DRAFT)
+  version: v1
+  contact:
+    name: Jakob Schlyter
+    email: jakob.schlyter@icann.org
+
+servers:
+  - url: /api/v1
+
+paths:
+
+  '/domains':
+    get:
+      summary: Get all domains
+      responses:
+        "200":
+          description: Brief list of all domains
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/domain_list_response'
+              examples:
+                example-1:
+                  value:
+                    domains:
+                      - name: tld
+                        state: NI
+                        requested_state: NI
+                      - name: xn--rksmrgs-5wao1o
+                        state: NI
+                        requested_state: CI
+      security:
+        - basic: []
+
+  '/domain':
+    post:
+      summary: Create domain
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/domain_create_request'
+            examples:
+              example-1:
+                value:
+                  name: tld
+                  requested_state: NI
+        required: true
+      responses:
+        "204":
+          description: Domain created
+          content: {}
+      security:
+        - basic: []
+
+  '/domain/{domain_name}':
+    get:
+      summary: Get domain
+      parameters:
+        - name: domain_name
+          description: Domain name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/domain_name'
+      responses:
+        "200":
+          description: Domain information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/domain_full_response'
+      security:
+        - basic: []
+
+    delete:
+      summary: Delete domain
+      parameters:
+        - name: domain_name
+          description: Domain name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/domain_name'
+      responses:
+        "204":
+          description: Domain deleted
+          content: {}
+      security:
+        - basic: []
+
+    patch:
+      summary: Update domain
+      parameters:
+        - name: domain_name
+          description: Domain name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/domain_name'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/domain_update_request'
+        required: true
+      responses:
+        "200":
+          description: Domain updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/domain_full_response'
+      security:
+        - basic: []
+
+
+components:
+
+  securitySchemes:
+    basic:
+      type: http
+      scheme: basic
+
+  schemas:
+    domain_name:
+      type: string
+      pattern: "^[a-z][a-z0-9\\-]+$"
+      examples:
+        - tld
+        - xn--rksmrgs-5wao1o
+
+    fqdn:
+      type: string
+      pattern: "^[A-Za-z0-9\\-]{1,63}(\\.[A-Za-z0-9\\-]{1,63})*$"
+      examples:
+        - ns1.example.com
+
+    nameservers:
+      type: array
+      minItems: 2
+      items:
+        $ref: '#/components/schemas/fqdn'
+
+    domain_state:
+      type: string
+      default: NI
+      enum:
+        - NI             # No interruption (default state)
+        - CI             # Controlled interruption
+        - VI             # Visible interruption
+        - VIN            # Visible interruption with notification
+
+    domain_list_response:
+      type: object
+      required:
+        - domains
+      properties:
+        domains:
+          type: array
+          items:
+            $ref: '#/components/schemas/domain_brief_response'
+
+    domain_brief_response:
+      type: object
+      required:
+        - name
+        - state
+      properties:
+        name:
+          $ref: '#/components/schemas/domain_name'
+        state:
+          $ref: '#/components/schemas/domain_state'
+        requested_state:
+          $ref: '#/components/schemas/domain_state'
+
+    domain_full_response:
+      type: object
+      required:
+        - name
+        - nameservers
+        - state
+        - created
+      properties:
+        name:
+          $ref: '#/components/schemas/domain_name'
+        nameservers:
+          $ref: '#/components/schemas/nameservers'
+        state:
+          $ref: '#/components/schemas/domain_state'
+        requested_state:
+          $ref: '#/components/schemas/domain_state'
+        created:
+          type: string
+          format: date-time
+        last_modified:
+          type: string
+          format: date-time
+
+    domain_create_request:
+      type: object
+      required:
+        - name
+        - state
+      properties:
+        name:
+          $ref: '#/components/schemas/domain_name'
+        requested_state:
+          $ref: '#/components/schemas/domain_state'
+
+    domain_update_request:
+      type: object
+      required:
+        - requested_state
+      properties:
+        requested_state:
+          $ref: '#/components/schemas/domain_state'
