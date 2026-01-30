@@ -204,7 +204,7 @@ components:
       type: object
       required:
         - name
-        - state
+        - requested_state
       properties:
         name:
           $ref: '#/components/schemas/domain_name'
