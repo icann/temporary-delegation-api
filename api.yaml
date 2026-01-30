@@ -199,6 +199,8 @@ components:
         last_modified:
           type: string
           format: date-time
+        additional_rrs:
+          $ref: '#/components/schemas/additional_rrs'
 
     domain_create_request:
       type: object
@@ -210,6 +212,8 @@ components:
           $ref: '#/components/schemas/domain_name'
         requested_state:
           $ref: '#/components/schemas/domain_state'
+        additional_rrs:
+          $ref: '#/components/schemas/additional_rrs'
 
     domain_update_request:
       type: object
@@ -218,3 +222,16 @@ components:
       properties:
         requested_state:
           $ref: '#/components/schemas/domain_state'
+        additional_rrs:
+          $ref: '#/components/schemas/additional_rrs'
+
+    additional_rrs:
+      description: |
+        List of additional DNS resource records in zone file format as defined
+        in RFC 1035 section 5.1.
+      type: array
+      items:
+        type: string
+        examples:
+          - "label.example.com. IN A 192.0.2.1"
+          - "label.example.com. IN AAAA 2001:DB8::1"
