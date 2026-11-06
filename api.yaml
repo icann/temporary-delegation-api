@@ -10,6 +10,9 @@ info:
 servers:
   - url: /api/v1
 
+security:
+  - basic: []
+
 paths:
 
   '/domains':
@@ -32,8 +35,6 @@ paths:
                       - name: xn--rksmrgs-5wao1o
                         state: NI
                         requested_state: CI
-      security:
-        - basic: []
 
   '/domain':
     post:
@@ -50,11 +51,13 @@ paths:
                   requested_state: NI
         required: true
       responses:
-        "204":
+        "201":
           description: Domain created
-          content: {}
-      security:
-        - basic: []
+          headers:
+            Location:
+              description: URL of the created domain
+              schema:
+                type: string
 
   '/domain/{domain_name}':
     get:
@@ -73,8 +76,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/domain_full_response'
-      security:
-        - basic: []
 
     delete:
       summary: Delete domain
@@ -86,11 +87,8 @@ paths:
           schema:
             $ref: '#/components/schemas/domain_name'
       responses:
-        "204":
+        "202":
           description: Domain deleted
-          content: {}
-      security:
-        - basic: []
 
     patch:
       summary: Update domain
@@ -106,6 +104,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/domain_update_request'
+            examples:
+              example-1:
+                value:
+                  additional_rrs:
+                    - "label.example.tld. IN A 192.0.2.1"
+                    - "label.example.tld. IN AAAA 2001:DB8::1"
+              example-2:
+                value:
+                  requested_state: VIN
         required: true
       responses:
         "200":
@@ -114,8 +121,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/domain_full_response'
-      security:
-        - basic: []
 
 
 components:
@@ -127,6 +132,7 @@ components:
 
   schemas:
     domain_name:
+      description: Domain name labe
       type: string
       pattern: "^[a-z][a-z0-9\\-]+$"
       examples:
@@ -135,11 +141,12 @@ components:
 
     fqdn:
       type: string
-      pattern: "^[A-Za-z0-9\\-]{1,63}(\\.[A-Za-z0-9\\-]{1,63})*$"
+      pattern: "^[a-zA-Z0-9\\-]+(\\.[a-zA-Z0-9\\-]+)*$"
       examples:
         - ns1.example.com
 
     nameservers:
+      description: List of nameservers for the domain (read-only field)
       type: array
       minItems: 2
       items:
@@ -147,7 +154,6 @@ components:
 
     domain_state:
       type: string
-      default: NI
       enum:
         - NI             # No interruption (default state)
         - CI             # Controlled interruption
@@ -194,9 +200,11 @@ components:
         requested_state:
           $ref: '#/components/schemas/domain_state'
         created:
+          description: Creation timestamp of the domain (read-only))
           type: string
           format: date-time
         last_modified:
+          description: Last modification timestamp of the domain (read-only))
           type: string
           format: date-time
         additional_rrs:
@@ -207,6 +215,7 @@ components:
       required:
         - name
         - requested_state
+      additionalProperties: false
       properties:
         name:
           $ref: '#/components/schemas/domain_name'
@@ -217,8 +226,7 @@ components:
 
     domain_update_request:
       type: object
-      required:
-        - requested_state
+      additionalProperties: false
       properties:
         requested_state:
           $ref: '#/components/schemas/domain_state'
@@ -228,10 +236,11 @@ components:
     additional_rrs:
       description: |
         List of additional DNS resource records in zone file format as defined
-        in RFC 1035 section 5.1.
+        in RFC 1035 section 5.1. All records must follow the proper zone file format and
+        must have an origin below the domain name specified in the request.
       type: array
       items:
         type: string
         examples:
-          - "label.example.com. IN A 192.0.2.1"
-          - "label.example.com. IN AAAA 2001:DB8::1"
+          - "label.example.tld. IN A 192.0.2.1"
+          - "label.example.tld. IN AAAA 2001:DB8::1"
